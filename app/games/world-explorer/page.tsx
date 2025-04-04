@@ -474,7 +474,7 @@ export default function WorldExplorerPage() {
                 <div className="font-medium">Difficulté des questions</div>
                 <div className="text-sm text-muted-foreground">Ajustez le niveau de difficulté des quiz</div>
               </div>
-              <Select value={difficulty} onValueChange={setDifficulty}>
+              <Select value={difficulty} onValueChange={(value) => setDifficulty(value as "easy" | "normal" | "hard")}>
                 <SelectTrigger className="w-[120px]">
                   <SelectValue placeholder="Difficulté" />
                 </SelectTrigger>

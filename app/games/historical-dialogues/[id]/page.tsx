@@ -1,20 +1,20 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
-import { ArrowLeft, Home, BookOpen, Award, MessageSquare, History } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { CharacterIllustration } from "@/components/historical-dialogues/character-illustration"
+import { FactCard } from "@/components/historical-dialogues/fact-card"
+import { QuizQuestion } from "@/components/historical-dialogues/quiz-question"
+import { TypingEffect } from "@/components/historical-dialogues/typing-effect"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CharacterIllustration } from "@/components/historical-dialogues/character-illustration"
-import { TypingEffect } from "@/components/historical-dialogues/typing-effect"
-import { QuizQuestion } from "@/components/historical-dialogues/quiz-question"
-import { FactCard } from "@/components/historical-dialogues/fact-card"
-import { historicalCharacters } from "@/data/historical-characters"
 import { getDialogueForCharacter } from "@/data/dialogue-scenarios"
+import { historicalCharacters } from "@/data/historical-characters"
 import { useMobile } from "@/hooks/use-mobile"
+import { ArrowLeft, Award, BookOpen, History, Home, MessageSquare } from "lucide-react"
+import Link from "next/link"
+import { useParams, useRouter } from "next/navigation"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 type MessageType = {
   id: string
@@ -32,10 +32,12 @@ type AIResponseType = {
   message: string
 }
 
-export default function HistoricalDialoguePage({ params }: { params: { id: string } }) {
+export default function HistoricalDialoguePage() {
   const router = useRouter()
   const isMobile = useMobile()
-  const characterId = params.id
+  const params = useParams<{ id: string }>()
+  const characterId = params?.id
+
 
   // Find character data
   const character = historicalCharacters.find((c) => c.id === characterId)
@@ -100,7 +102,7 @@ export default function HistoricalDialoguePage({ params }: { params: { id: strin
         message: dialogueScenario.introduction,
       }
 
-      const introMessage = {
+      const introMessage: MessageType = {
         id: `char-intro-${Date.now()}`,
         sender: "character",
         content: JSON.stringify(introJson),
@@ -180,7 +182,7 @@ export default function HistoricalDialoguePage({ params }: { params: { id: strin
     if (!inputValue.trim() || !character || !dialogueScenario) return
 
     // Add user message
-    const userMessage = {
+    const userMessage: MessageType = {
       id: `user-${Date.now()}`,
       sender: "user",
       content: inputValue,
@@ -195,7 +197,7 @@ export default function HistoricalDialoguePage({ params }: { params: { id: strin
     // Generate character response
     setTimeout(() => {
       let responseText = ""
-      let newMood: "neutral" | "happy" | "surprised" = "neutral"
+      let newMood: "neutral" | "happy" | "surprised" | "thinking" = "neutral"
       let newFact: string | null = null
 
       // Check for keywords in user message to determine response
@@ -224,7 +226,7 @@ export default function HistoricalDialoguePage({ params }: { params: { id: strin
       }
 
       // Add character response with typing indicator
-      const characterMessage = {
+      const characterMessage: MessageType = {
         id: `char-${Date.now()}`,
         sender: "character",
         content: JSON.stringify(responseJson),
@@ -254,7 +256,7 @@ export default function HistoricalDialoguePage({ params }: { params: { id: strin
             message: dialogueScenario.quizIntroduction,
           }
 
-          const quizIntroMessage = {
+          const quizIntroMessage: MessageType = {
             id: `quiz-intro-${Date.now()}`,
             sender: "character",
             content: JSON.stringify(quizIntroJson),
@@ -297,7 +299,7 @@ export default function HistoricalDialoguePage({ params }: { params: { id: strin
       }
 
       // Add response based on correctness
-      const responseMessage = {
+      const responseMessage: MessageType = {
         id: `quiz-response-${Date.now()}`,
         sender: "character",
         content: JSON.stringify(responseJson),
@@ -323,7 +325,7 @@ export default function HistoricalDialoguePage({ params }: { params: { id: strin
             message: dialogueScenario.conclusion,
           }
 
-          const conclusionMessage = {
+          const conclusionMessage: MessageType = {
             id: `conclusion-${Date.now()}`,
             sender: "character",
             content: JSON.stringify(conclusionJson),
@@ -472,9 +474,8 @@ export default function HistoricalDialoguePage({ params }: { params: { id: strin
                       className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[80%] rounded-lg p-3 ${
-                          message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
-                        }`}
+                        className={`max-w-[80%] rounded-lg p-3 ${message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+                          }`}
                       >
                         {message.isTyping ? (
                           <TypingEffect
