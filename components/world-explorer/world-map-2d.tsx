@@ -79,6 +79,7 @@ export default function WorldMap2D({ onCountrySelect, visitedCountries, selected
       NZ: [-40.9006, 174.886],
       NG: [9.082, 8.6753],
       SE: [60.1282, 18.6435],
+      MG: [-18.766947, 46.869107],
     }
 
     return countryCoordinates[countryCode] || [0, 0]
