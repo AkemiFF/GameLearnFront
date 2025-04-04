@@ -1,8 +1,10 @@
 "use client"
 
+import { CardFooter } from "@/components/ui/card"
+
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -19,31 +21,29 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ContinentFilter } from "@/components/world-explorer/continent-filter"
 import { CountryInfoPanel } from "@/components/world-explorer/country-info-panel"
 import { EnhancedStats } from "@/components/world-explorer/enhanced-stats"
-import { countries } from "@/data/countries"
+import { countries as allCountries } from "@/data/countries"
 import { useMobile } from "@/hooks/use-mobile"
+import { WorldExplorerService } from "@/services/world-explorer-service"
 import { AnimatePresence, motion } from "framer-motion"
-import { ArrowLeft, Globe, HelpCircle, Home, Map, Settings, Trophy } from 'lucide-react'
+import { ArrowLeft, Globe, HelpCircle, Home, Map, Settings, Trophy } from "lucide-react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 // Importer dynamiquement les composants qui utilisent Leaflet
-const WorldMap2D = dynamic(
-  () => import("@/components/world-explorer/world-map-2d"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center h-full w-full bg-muted/20">
-        <Globe className="h-12 w-12 text-primary animate-pulse" />
-      </div>
-    )
-  }
-)
+const WorldMap2D = dynamic(() => import("@/components/world-explorer/world-map-2d"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-full w-full bg-muted/20">
+      <Globe className="h-12 w-12 text-primary animate-pulse" />
+    </div>
+  ),
+})
 
 const CountryQuiz = dynamic(
-  () => import("@/components/world-explorer/country-quiz").then(mod => ({ default: mod.CountryQuiz })),
-  { ssr: false }
+  () => import("@/components/world-explorer/country-quiz").then((mod) => ({ default: mod.CountryQuiz })),
+  { ssr: false },
 )
 
 export default function WorldExplorerPage() {
@@ -61,22 +61,43 @@ export default function WorldExplorerPage() {
   const [showIntro, setShowIntro] = useState(true)
   const [activeTab, setActiveTab] = useState("map")
   const [searchQuery, setSearchQuery] = useState("")
-  const [searchResults, setSearchResults] = useState<typeof countries>([])
+  const [searchResults, setSearchResults] = useState<typeof allCountries>([])
   const [continentFilter, setContinentFilter] = useState("all")
   const [isClient, setIsClient] = useState(false)
 
   // Settings
-  const [difficulty, setDifficulty] = useState("normal")
+  const [difficulty, setDifficulty] = useState<"easy" | "normal" | "hard">("normal")
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [mapStyle, setMapStyle] = useState("standard")
+
+  // Calculate progress percentage
+  const progressPercentage = allCountries.length > 0 ? (visitedCountries.length / allCountries.length) * 100 : 0
 
   // Vérifier si nous sommes côté client
   useEffect(() => {
     setIsClient(true)
   }, [])
 
+  // Initialisation du jeu et chargement des données
+  useEffect(() => {
+    const initializeGame = async () => {
+      const savedData = await WorldExplorerService.loadSavedData()
+      if (savedData) {
+        setScore(savedData.score)
+        setTotalQuestions(savedData.totalQuestions)
+        setVisitedCountries(savedData.visitedCountries)
+      }
+    }
+    initializeGame()
+  }, [])
+
+  // Mettre à jour les données sauvegardées à chaque changement
+  useEffect(() => {
+    WorldExplorerService.saveGameData({ score, totalQuestions, visitedCountries })
+  }, [score, totalQuestions, visitedCountries])
+
   // Get country data
-  const countryData = selectedCountry ? countries.find((c) => c.code === selectedCountry) : null
+  const countryData = selectedCountry ? allCountries.find((c) => c.code === selectedCountry) : null
 
   // Handle search
   useEffect(() => {
@@ -86,13 +107,13 @@ export default function WorldExplorerPage() {
     }
 
     const query = searchQuery.toLowerCase()
-    const results = countries.filter((country) => country.name.toLowerCase().includes(query)).slice(0, 5)
+    const results = allCountries.filter((country) => country.name.toLowerCase().includes(query)).slice(0, 5)
 
     setSearchResults(results)
   }, [searchQuery])
 
   // Filter countries by continent
-  const filteredCountries = countries.filter((country) => {
+  const filteredCountries = allCountries.filter((country) => {
     if (continentFilter === "all") return true
     return country.continent === continentFilter
   })
@@ -116,12 +137,12 @@ export default function WorldExplorerPage() {
     setSelectedCountry(null)
   }
 
-  // Calculate progress percentage
-  const progressPercentage = Math.round((visitedCountries.length / countries.length) * 100)
-
   // Reset progress
   const handleResetProgress = () => {
-    if (typeof window !== 'undefined' && window.confirm("Êtes-vous sûr de vouloir réinitialiser votre progression ? Cette action est irréversible.")) {
+    if (
+      typeof window !== "undefined" &&
+      window.confirm("Êtes-vous sûr de vouloir réinitialiser votre progression ? Cette action est irréversible.")
+    ) {
       setVisitedCountries([])
       setScore(0)
       setTotalQuestions(0)
@@ -131,13 +152,15 @@ export default function WorldExplorerPage() {
 
   // Si nous ne sommes pas encore côté client, afficher un état de chargement ou rien
   if (!isClient) {
-    return <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-indigo-950">
-      <div className="container py-6">
-        <div className="flex items-center justify-center h-[80vh]">
-          <Globe className="h-12 w-12 text-primary animate-pulse" />
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-indigo-950">
+        <div className="container py-6">
+          <div className="flex items-center justify-center h-[80vh]">
+            <Globe className="h-12 w-12 text-primary animate-pulse" />
+          </div>
         </div>
       </div>
-    </div>
+    )
   }
 
   return (
@@ -205,7 +228,7 @@ export default function WorldExplorerPage() {
                 <span className="font-medium">{score} points</span>
               </div>
               <Badge variant="outline" className="ml-2">
-                {visitedCountries.length}/{countries.length} pays visités
+                {visitedCountries.length}/{allCountries.length} pays visités
               </Badge>
             </div>
           </div>
@@ -253,7 +276,7 @@ export default function WorldExplorerPage() {
                             size="sm"
                             onClick={() => {
                               // Sélectionner un pays aléatoire non visité
-                              const unvisitedCountries = countries.filter((c) => !visitedCountries.includes(c.code))
+                              const unvisitedCountries = allCountries.filter((c) => !visitedCountries.includes(c.code))
                               if (unvisitedCountries.length > 0) {
                                 const randomCountry =
                                   unvisitedCountries[Math.floor(Math.random() * unvisitedCountries.length)]
@@ -285,7 +308,7 @@ export default function WorldExplorerPage() {
                   <CardDescription>
                     {visitedCountries.length === 0
                       ? "Vous n'avez encore visité aucun pays"
-                      : `Vous avez visité ${visitedCountries.length} pays sur ${countries.length}`}
+                      : `Vous avez visité ${visitedCountries.length} pays sur ${allCountries.length}`}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -306,11 +329,11 @@ export default function WorldExplorerPage() {
                       {visitedCountries
                         .filter((countryCode) => {
                           if (continentFilter === "all") return true
-                          const country = countries.find((c) => c.code === countryCode)
+                          const country = allCountries.find((c) => c.code === countryCode)
                           return country?.continent === continentFilter
                         })
                         .map((countryCode) => {
-                          const country = countries.find((c) => c.code === countryCode)
+                          const country = allCountries.find((c) => c.code === countryCode)
                           if (!country) return null
 
                           return (
@@ -345,6 +368,7 @@ export default function WorldExplorerPage() {
       </main>
 
       {/* Quiz dialog */}
+      {/* Quiz dialog */}
       <AnimatePresence>
         {showQuiz && selectedCountry && countryData && (
           <Dialog
@@ -356,7 +380,9 @@ export default function WorldExplorerPage() {
               }
             }}
           >
-            <DialogContent className="max-w-2xl">
+            {/* <DialogContent className="fixed inset-0 flex items-center justify-center p-0 bg-transparent border-none shadow-none"> */}
+            <DialogContent className=" z-[9999]">
+              {/* <div className="relative w-full max-w-[95vw] md:max-w-2xl bg-background rounded-lg border shadow-lg p-6 m-4"> */}
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <div className="w-8 h-5 overflow-hidden rounded">
@@ -379,6 +405,7 @@ export default function WorldExplorerPage() {
                   soundEnabled={soundEnabled}
                 />
               )}
+              {/* </div> */}
             </DialogContent>
           </Dialog>
         )}
@@ -503,7 +530,7 @@ export default function WorldExplorerPage() {
 
       {/* Introduction dialog */}
       <Dialog open={showIntro} onOpenChange={setShowIntro}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md z-[9999]">
           <DialogHeader>
             <DialogTitle>Bienvenue dans World Explorer!</DialogTitle>
             <DialogDescription>Prêt à découvrir le monde et tester vos connaissances?</DialogDescription>
@@ -523,6 +550,7 @@ export default function WorldExplorerPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </div >
   )
 }
+
