@@ -1,11 +1,11 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from "react"
+import { useAuth } from "@/context/auth-context"
 import { useDialogueScenario } from "@/hooks/use-dialogue-scenario"
 import { useUserProgress } from "@/hooks/use-user-progress"
-import { useAuth } from "@/context/auth-context"
 import { saveLocalProgress } from "@/lib/storage-utils"
-import type { HistoricalCharacter, MessageType, DialogueState } from "@/types/historical-dialogues"
+import type { DialogueState, HistoricalCharacter, MessageType } from "@/types/historical-dialogues"
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react"
 
 interface DialogueContextType {
   messages: MessageType[]
@@ -65,7 +65,7 @@ export function DialogueProvider({
         message: scenario.introduction,
       }
 
-      const introMessage = {
+      const introMessage: MessageType = {
         id: `char-intro-${Date.now()}`,
         sender: "character",
         content: JSON.stringify(introJson),
@@ -92,10 +92,12 @@ export function DialogueProvider({
     if (!inputValue.trim() || !character || !scenario) return
 
     // Ajouter le message de l'utilisateur
-    const userMessage = {
+    const userMessage: MessageType = {
       id: `user-${Date.now()}`,
       sender: "user",
       content: inputValue,
+      isTyping: false,
+      mood: "neutral",
     }
 
     setMessages((prev) => [...prev, userMessage])
@@ -107,7 +109,7 @@ export function DialogueProvider({
     // Générer la réponse du personnage
     setTimeout(() => {
       let responseText = ""
-      let newMood: "neutral" | "happy" | "surprised" = "neutral"
+      let newMood: "neutral" | "happy" | "surprised" | "thinking" = "neutral"
       let newFact: string | null = null
 
       // Vérifier les mots-clés dans le message de l'utilisateur
@@ -135,7 +137,7 @@ export function DialogueProvider({
       }
 
       // Ajouter la réponse du personnage avec indicateur de frappe
-      const characterMessage = {
+      const characterMessage: MessageType = {
         id: `char-${Date.now()}`,
         sender: "character",
         content: JSON.stringify(responseJson),
@@ -165,7 +167,7 @@ export function DialogueProvider({
             message: scenario.quizIntroduction,
           }
 
-          const quizIntroMessage = {
+          const quizIntroMessage: MessageType = {
             id: `quiz-intro-${Date.now()}`,
             sender: "character",
             content: JSON.stringify(quizIntroJson),
@@ -208,7 +210,7 @@ export function DialogueProvider({
       }
 
       // Ajouter la réponse en fonction de l'exactitude
-      const responseMessage = {
+      const responseMessage: MessageType = {
         id: `quiz-response-${Date.now()}`,
         sender: "character",
         content: JSON.stringify(responseJson),
@@ -234,7 +236,7 @@ export function DialogueProvider({
             message: scenario.conclusion,
           }
 
-          const conclusionMessage = {
+          const conclusionMessage: MessageType = {
             id: `conclusion-${Date.now()}`,
             sender: "character",
             content: JSON.stringify(conclusionJson),
