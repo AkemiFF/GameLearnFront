@@ -183,6 +183,15 @@ export const countries: Country[] = [
     population: 206000000,
   },
   {
+    code: "MG",
+    name: "Madagascar",
+    capital: "Antananarivo",
+    continent: "Africa",
+    language: "Malagasy, Français",
+    currency: "Ariary (Ar)",
+    population: 28000000,
+  },
+  {
     code: "SE",
     name: "Suède",
     capital: "Stockholm",
@@ -193,4 +202,6 @@ export const countries: Country[] = [
   },
   // Ajoutez d'autres pays selon vos besoins
 ]
+
+export const allCountries = countries
 
