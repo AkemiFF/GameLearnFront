@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { countries } from "@/data/countries"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
-import { countries } from "@/data/countries"
+import { useEffect, useRef, useState } from "react"
 
 interface MapComponentProps {
   mapCenter: [number, number]
@@ -14,11 +14,11 @@ interface MapComponentProps {
   getCountryCoordinates: (countryCode: string) => [number, number]
 }
 
-export default function MapComponent({ 
-  mapCenter, 
-  mapZoom, 
-  visitedCountries, 
-  selectedCountry, 
+export default function MapComponent({
+  mapCenter,
+  mapZoom,
+  visitedCountries,
+  selectedCountry,
   onCountrySelect,
   getCountryCoordinates
 }: MapComponentProps) {
@@ -33,7 +33,7 @@ export default function MapComponent({
     if (!mapRef.current || leafletMapRef.current) return;
 
     // Fix Leaflet icon issues
-    delete L.Icon.Default.prototype._getIconUrl;
+    // No need to delete _getIconUrl as it doesn't exist on L.Icon.Default
     L.Icon.Default.mergeOptions({
       iconRetinaUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
       iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
@@ -69,8 +69,8 @@ export default function MapComponent({
             style: (feature) => countryStyle(feature, selectedCountry, visitedCountries),
             onEachFeature: (feature, layer) => {
               const countryCode = feature.properties.ISO_A2;
-              const countryName = feature.properties.NAME || 
-                countries.find((c) => c.code === countryCode)?.name || 
+              const countryName = feature.properties.NAME ||
+                countries.find((c) => c.code === countryCode)?.name ||
                 countryCode;
 
               layer.on({
@@ -118,7 +118,7 @@ export default function MapComponent({
   // Update styles when selected country or visited countries change
   useEffect(() => {
     if (geoJsonLayerRef.current && isMapInitialized) {
-      geoJsonLayerRef.current.setStyle((feature) => 
+      geoJsonLayerRef.current.setStyle((feature) =>
         countryStyle(feature, selectedCountry, visitedCountries)
       );
     }

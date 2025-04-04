@@ -1,10 +1,10 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Progress } from "@/components/ui/progress"
 import { motion } from "framer-motion"
 import { Lightbulb, RotateCcw, Save } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { Label } from "@/components/ui/label"
 
 interface SimulationResultsProps {
   results: {
@@ -39,10 +39,12 @@ export function SimulationResults({ results, onReset, onSaveNotes }: SimulationR
             </div>
             <Progress
               value={results.efficiency * 100}
-              className="h-2"
-              indicatorClassName={
-                results.efficiency > 0.7 ? "bg-green-500" : results.efficiency > 0.4 ? "bg-amber-500" : "bg-red-500"
-              }
+              className={`h-2 ${results.efficiency > 0.7
+                  ? "bg-green-500"
+                  : results.efficiency > 0.4
+                    ? "bg-amber-500"
+                    : "bg-red-500"
+                }`}
             />
           </div>
 

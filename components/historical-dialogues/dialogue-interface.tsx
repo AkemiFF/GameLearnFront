@@ -1,17 +1,17 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { MessageSquare, BookOpen, Send, X, Award } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CharacterPortrait } from "@/components/historical-dialogues/character-portrait"
-import { TypingEffect } from "@/components/historical-dialogues/typing-effect"
 import { FactCard } from "@/components/historical-dialogues/fact-card"
 import { QuizQuestion } from "@/components/historical-dialogues/quiz-question"
-import type { HistoricalCharacter } from "@/data/historical-characters"
+import { TypingEffect } from "@/components/historical-dialogues/typing-effect"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getDialogueForCharacter } from "@/data/dialogue-scenarios"
+import type { HistoricalCharacter } from "@/data/historical-characters"
+import { Award, BookOpen, MessageSquare, Send, X } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 
 interface DialogueInterfaceProps {
   character: HistoricalCharacter
@@ -70,7 +70,7 @@ export function DialogueInterface({ character, onComplete }: DialogueInterfacePr
     if (!inputValue.trim()) return
 
     // Add user message
-    const userMessage = {
+    const userMessage: MessageType = {
       id: `user-${Date.now()}`,
       sender: "user",
       content: inputValue,
@@ -85,7 +85,7 @@ export function DialogueInterface({ character, onComplete }: DialogueInterfacePr
     // Generate character response
     setTimeout(() => {
       let response = ""
-      let newMood: "neutral" | "happy" | "surprised" = "neutral"
+      let newMood: "neutral" | "happy" | "surprised" | "thinking" = "neutral"
       let newFact: string | null = null
 
       // Check for keywords in user message to determine response
@@ -108,7 +108,7 @@ export function DialogueInterface({ character, onComplete }: DialogueInterfacePr
       }
 
       // Add character response
-      const characterMessage = {
+      const characterMessage: MessageType = {
         id: `char-${Date.now()}`,
         sender: "character",
         content: response,
@@ -130,7 +130,7 @@ export function DialogueInterface({ character, onComplete }: DialogueInterfacePr
       // Check if we should transition to quiz after several exchanges
       if (messages.filter((m) => m.sender === "user").length >= 5 && dialogueState === "free-chat") {
         setTimeout(() => {
-          const quizIntroMessage = {
+          const quizIntroMessage: MessageType = {
             id: `quiz-intro-${Date.now()}`,
             sender: "character",
             content: dialogueScenario.quizIntroduction,
@@ -154,7 +154,7 @@ export function DialogueInterface({ character, onComplete }: DialogueInterfacePr
     }
 
     // Add response based on correctness
-    const responseMessage = {
+    const responseMessage: MessageType = {
       id: `quiz-response-${Date.now()}`,
       sender: "character",
       content: isCorrect
@@ -171,7 +171,7 @@ export function DialogueInterface({ character, onComplete }: DialogueInterfacePr
         setCurrentQuizIndex((prev) => prev + 1)
       } else {
         // End of quiz, move to conclusion
-        const conclusionMessage = {
+        const conclusionMessage: MessageType = {
           id: `conclusion-${Date.now()}`,
           sender: "character",
           content: dialogueScenario.conclusion,
@@ -252,9 +252,8 @@ export function DialogueInterface({ character, onComplete }: DialogueInterfacePr
                     className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[80%] rounded-lg p-3 ${
-                        message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
-                      }`}
+                      className={`max-w-[80%] rounded-lg p-3 ${message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+                        }`}
                     >
                       {message.isTyping ? <TypingEffect text={message.content} /> : <p>{message.content}</p>}
                     </div>
