@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getDialogueForCharacter } from "@/data/dialogue-scenarios"
-import { historicalCharacters } from "@/data/historical-characters"
 import { useMobile } from "@/hooks/use-mobile"
 import type { DialogueState, HistoricalCharacter, MessageType } from "@/types/historical-dialogues"
 import { ArrowLeft, Award, BookOpen, History, Home, MessageSquare } from "lucide-react"
@@ -55,7 +54,7 @@ export default function HistoricalDialoguePage() {
   const [messages, setMessages] = useState<MessageType[]>([])
   const [inputValue, setInputValue] = useState("")
   const [dialogueState, setDialogueState] = useState<DialogueState>("intro")
-  const [currentMood, setCurrentMood] = useState<"neutral" | "happy" | "thinking" | "surprised">("thinking")
+  const [currentMood, setCurrentMood] = useState<"neutral" | "happy" | "thinking" | "surprised">("neutral")
   const [discoveredFacts, setDiscoveredFacts] = useState<string[]>([])
   const [score, setScore] = useState(0)
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0)
@@ -72,15 +71,21 @@ export default function HistoricalDialoguePage() {
         return
       }
 
-      const foundCharacter = historicalCharacters.find((c) => c.id === characterId)
-      if (!foundCharacter) {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/historical_dialog/characters/${characterId}/`)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch character: ${response.status}`)
+        }
+        const data = await response.json()
+        setCharacter(data)
+        setDialogueScenario(getDialogueForCharacter(data.id))
+      } catch (error) {
+        console.error("Failed to fetch character data:", error)
         router.push("/games/historical-dialogues")
         return
+      } finally {
+        setIsLoading(false)
       }
-
-      setCharacter(foundCharacter)
-      setDialogueScenario(getDialogueForCharacter(foundCharacter.id))
-      setIsLoading(false)
     }
 
     fetchCharacterAndScenario()
@@ -196,8 +201,8 @@ export default function HistoricalDialoguePage() {
   )
 
   // Handle sending a message
-  const handleSendMessage = useCallback(() => {
-    if (!inputValue.trim() || !character || !dialogueScenario) return
+  const handleSendMessage = useCallback(async () => {
+    if (!inputValue.trim() || !character) return
 
     // Add user message
     const userMessage: MessageType = {
@@ -212,94 +217,67 @@ export default function HistoricalDialoguePage() {
     // Simulate character thinking
     setCurrentMood("thinking")
 
-    // Generate character response
-    setTimeout(() => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/historical_dialog/characters/${character.id}/chat/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: inputValue }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to send message: ${response.status}`)
+      }
+
+      const reader = response.body?.getReader()
       let responseText = ""
       let newMood: "neutral" | "happy" | "surprised" | "thinking" = "neutral"
-      let newFact: string | null = null
+      const newFact: string | null = null
 
-      // Check for keywords in user message to determine response
-      const lowerCaseInput = inputValue.toLowerCase()
+      while (true) {
+        const { done, value } = await reader!.read()
+        if (done) {
+          break
+        }
 
-      // Find matching response from dialogue data
-      const matchingResponse = dialogueScenario.responses.find((r) =>
-        r.keywords.some((keyword) => lowerCaseInput.includes(keyword)),
-      )
+        const chunk = new TextDecoder().decode(value)
+        responseText += chunk
 
-      if (matchingResponse) {
-        responseText = matchingResponse.text
-        newMood = matchingResponse.mood || "neutral"
-        newFact = matchingResponse.fact || null
-      } else {
-        // Default response if no keywords match
-        responseText =
-          dialogueScenario.defaultResponses[Math.floor(Math.random() * dialogueScenario.defaultResponses.length)]
-        newMood = "neutral"
+        try {
+          const parsedResponse = JSON.parse(responseText)
+          newMood = parsedResponse.mood || "neutral"
+          responseText = parsedResponse.response
+        } catch (error) {
+          console.error("Error parsing stream chunk:", error)
+        }
+
+        // Create JSON response with mood
+        const responseJson = {
+          mood: newMood,
+          message: responseText,
+        }
+
+        // Add character response with typing indicator
+        const characterMessage: MessageType = {
+          id: `char-${Date.now()}`,
+          sender: "character",
+          content: JSON.stringify(responseJson),
+          isTyping: true,
+          mood: newMood,
+        }
+
+        setMessages((prev) => [...prev, characterMessage])
+        setCurrentMood(newMood)
       }
-
-      // Create JSON response with mood
-      const responseJson = {
-        mood: newMood,
-        message: responseText,
-      }
-
-      // Add character response with typing indicator
-      const characterMessage: MessageType = {
-        id: `char-${Date.now()}`,
-        sender: "character",
-        content: JSON.stringify(responseJson),
-        isTyping: true,
-        mood: newMood,
-      }
-
-      setMessages((prev) => [...prev, characterMessage])
-      setCurrentMood(newMood)
-
-      // Add discovered fact if there is one
-      if (newFact && !discoveredFacts.includes(newFact)) {
-        setDiscoveredFacts((prev) => [...prev, newFact!])
-        setScore((prev) => prev + 50)
-      }
-
-      // After a delay, remove the typing indicator
-      setTimeout(() => {
-        setMessages((prev) => prev.map((msg) => (msg.id === characterMessage.id ? { ...msg, isTyping: false } : msg)))
-      }, 1500)
-
-      // Check if we should transition to quiz after several exchanges
-      if (messages.filter((m) => m.sender === "user").length >= 5 && dialogueState === "free-chat") {
-        setTimeout(() => {
-          const quizIntroJson = {
-            mood: "neutral" as const,
-            message: dialogueScenario.quizIntroduction,
-          }
-
-          const quizIntroMessage: MessageType = {
-            id: `quiz-intro-${Date.now()}`,
-            sender: "character",
-            content: JSON.stringify(quizIntroJson),
-            isTyping: true,
-            mood: quizIntroJson.mood,
-          }
-
-          setMessages((prev) => [...prev, quizIntroMessage])
-
-          setTimeout(() => {
-            setMessages((prev) =>
-              prev.map((msg) => (msg.id === quizIntroMessage.id ? { ...msg, isTyping: false } : msg)),
-            )
-            setDialogueState("quiz")
-          }, 2000)
-        }, 3000)
-      }
-    }, 1500)
-  }, [inputValue, character, dialogueScenario, messages, dialogueState, discoveredFacts])
+    } catch (error) {
+      console.error("Failed to fetch AI response:", error)
+    }
+  }, [inputValue, character])
 
   // Handle quiz answer
   const handleQuizAnswer = useCallback(
     (isCorrect: boolean) => {
-      if (!dialogueScenario) return
-
       // Add points for correct answer
       if (isCorrect) {
         setScore((prev) => prev + 100)
@@ -365,7 +343,7 @@ export default function HistoricalDialoguePage() {
         }
       }, 2000)
     },
-    [dialogueScenario, currentQuizIndex, score, discoveredFacts, saveProgress],
+    [dialogueScenario, currentQuizIndex, score, discoveredFacts],
   )
 
   // Handle dialogue completion

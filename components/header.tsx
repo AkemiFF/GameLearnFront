@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { BookOpen, Sun, Moon } from "lucide-react"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { BookOpen, Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
+import Link from "next/link"
+import { useEffect, useState } from "react"
 
 interface HeaderProps {
   showBackButton?: boolean
@@ -30,7 +30,7 @@ export function Header({ showBackButton = false, onBack, showAuthButtons = true 
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
           <BookOpen className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold">EduPlay Studio</span>
+          <span className="text-xl font-bold">Nexus Game</span>
         </div>
         <nav className="hidden md:flex gap-6">
           <Link

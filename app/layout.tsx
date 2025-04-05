@@ -1,13 +1,13 @@
-import type React from "react"
+import { ThemeProvider } from "@/components/theme-provider"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
+import type React from "react"
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "EduPlay Studio",
+  title: "Nexus Game",
   description: "Transformez l'apprentissage en expérience ludique",
 }
 

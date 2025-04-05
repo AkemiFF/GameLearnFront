@@ -3,13 +3,13 @@ export interface HistoricalCharacter {
   id: string
   name: string
   period: string
-  shortDescription: string
-  portraitUrl: string
-  tags: string[]
-  birthYear: number
-  deathYear: number | null
+  short_description: string | null
+  portrait_url: string | null
+  birth_year: number | null
+  death_year: number | null
   nationality: string
-  achievements: string[]
+  tags: { name: string }[]
+  achievements: { description: string }[]
 }
 
 // Types pour les réponses de dialogue

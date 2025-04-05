@@ -1,15 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { Header } from "@/components/header"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { motion } from "framer-motion"
 import { ArrowRight, BookOpen, Brain, Gamepad2, Trophy, Users } from "lucide-react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Header } from "@/components/header"
+import { useState } from "react"
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState("student")
@@ -71,7 +71,7 @@ export default function LandingPage() {
               Transformez l'apprentissage en <span className="text-primary">jeu</span>
             </h1>
             <p className="max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8">
-              EduPlay Studio convertit vos contenus pédagogiques en expériences ludiques et interactives pour un
+              Nexus Game convertit vos contenus pédagogiques en expériences ludiques et interactives pour un
               apprentissage engageant et efficace.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
@@ -165,8 +165,8 @@ export default function LandingPage() {
               >
                 <div className="text-center space-y-4">
                   <BookOpen className="mx-auto h-16 w-16 text-primary" />
-                  <h3 className="text-2xl font-bold">Bienvenue sur EduPlay Studio</h3>
-                  <p className="text-muted-foreground">Transformez l'apprentissage en expérience ludique</p>
+                  <h3 className="text-2xl font-bold">Bienvenue sur Nexus Gme</h3>
+                  <p className="text-muted-foreground">Apprends, Joue, Progresse</p>
                 </div>
               </motion.div>
             </motion.div>
@@ -183,7 +183,7 @@ export default function LandingPage() {
           >
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">Fonctionnalités</h2>
             <p className="max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8">
-              Découvrez comment EduPlay Studio révolutionne l'apprentissage grâce à ses fonctionnalités innovantes.
+              Découvrez comment Nexus Game révolutionne l'apprentissage grâce à ses fonctionnalités innovantes.
             </p>
           </motion.div>
 
@@ -210,10 +210,10 @@ export default function LandingPage() {
         <div className="container flex flex-col items-center justify-between gap-4 md:flex-row">
           <div className="flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-primary" />
-            <span className="text-lg font-semibold">EduPlay Studio</span>
+            <span className="text-lg font-semibold">Nexus Game</span>
           </div>
           <p className="text-center text-sm text-muted-foreground md:text-left">
-            &copy; {new Date().getFullYear()} EduPlay Studio. Tous droits réservés.
+            &copy; {new Date().getFullYear()} Nexus Game. Tous droits réservés.
           </p>
         </div>
       </footer>

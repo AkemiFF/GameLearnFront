@@ -1,15 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { ArrowLeft, Home, BookOpen, Award, Settings, Info, History } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { HistoricalCharacterCard } from "@/components/historical-dialogues/character-card"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   Dialog,
   DialogContent,
@@ -18,15 +12,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { HistoricalCharacterCard } from "@/components/historical-dialogues/character-card"
-import { historicalCharacters } from "@/data/historical-characters"
+import { Progress } from "@/components/ui/progress"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { ArrowLeft, Award, BookOpen, History, Home, Info, Settings } from "lucide-react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+// import { historicalCharacters } from "@/data/historical-characters"
+import { useHistoricalCharacters } from "@/hooks/use-historical-characters"
 import { useMobile } from "@/hooks/use-mobile"
+import Loading from "../loading"
 
 export default function HistoricalDialoguesPage() {
   const router = useRouter()
   const isMobile = useMobile()
-
-  // Game state
+  const { characters, loading, error } = useHistoricalCharacters()
+  const historicalCharacters = characters
   const [score, setScore] = useState(0)
   const [learnedFacts, setLearnedFacts] = useState<string[]>([])
   const [completedDialogues, setCompletedDialogues] = useState<string[]>([])
@@ -35,7 +37,6 @@ export default function HistoricalDialoguesPage() {
   const [showIntro, setShowIntro] = useState(true)
   const [activeTab, setActiveTab] = useState("characters")
 
-  // Load saved state from localStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedScore = localStorage.getItem("historical-dialogues-score")
@@ -71,7 +72,7 @@ export default function HistoricalDialoguesPage() {
       setShowSettings(false)
     }
   }
-
+  if (loading) return <Loading />
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-orange-100 dark:from-slate-900 dark:to-amber-950">
       {/* Header */}

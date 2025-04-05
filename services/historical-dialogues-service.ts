@@ -1,5 +1,5 @@
+import type { DialogueScenario, HistoricalCharacter, UserProgress } from "@/types/historical-dialogues"
 import fetchAPI from "./api"
-import type { HistoricalCharacter, DialogueScenario, UserProgress } from "@/types/historical-dialogues"
 
 /**
  * Service pour gérer les requêtes API liées aux dialogues historiques
@@ -9,28 +9,28 @@ export const HistoricalDialoguesService = {
    * Récupère tous les personnages historiques
    */
   async getAllCharacters(): Promise<HistoricalCharacter[]> {
-    return fetchAPI<HistoricalCharacter[]>("/historical-dialogues/characters/")
+    return fetchAPI<HistoricalCharacter[]>("/historical_dialog/characters/")
   },
 
   /**
    * Récupère un personnage historique par son ID
    */
   async getCharacterById(characterId: string): Promise<HistoricalCharacter> {
-    return fetchAPI<HistoricalCharacter>(`/historical-dialogues/characters/${characterId}/`)
+    return fetchAPI<HistoricalCharacter>(`/historical_dialog/characters/${characterId}/`)
   },
 
   /**
    * Récupère le scénario de dialogue pour un personnage
    */
   async getDialogueScenario(characterId: string): Promise<DialogueScenario> {
-    return fetchAPI<DialogueScenario>(`/historical-dialogues/scenarios/${characterId}/`)
+    return fetchAPI<DialogueScenario>(`/historical_dialog/scenarios/${characterId}/`)
   },
 
   /**
    * Récupère la progression de l'utilisateur
    */
   async getUserProgress(userId: string): Promise<UserProgress> {
-    return fetchAPI<UserProgress>(`/historical-dialogues/progress/${userId}/`)
+    return fetchAPI<UserProgress>(`/historical_dialog/progress/${userId}/`)
   },
 
   /**
@@ -44,7 +44,7 @@ export const HistoricalDialoguesService = {
       discoveredFacts?: string[]
     },
   ): Promise<UserProgress> {
-    return fetchAPI<UserProgress>(`/historical-dialogues/progress/${userId}/`, {
+    return fetchAPI<UserProgress>(`/historical_dialog/progress/${userId}/`, {
       method: "PATCH",
       body: JSON.stringify(data),
     })
@@ -59,7 +59,7 @@ export const HistoricalDialoguesService = {
     score: number,
     discoveredFacts: string[],
   ): Promise<UserProgress> {
-    return fetchAPI<UserProgress>(`/historical-dialogues/progress/${userId}/complete-dialogue/`, {
+    return fetchAPI<UserProgress>(`/historical_dialog/progress/${userId}/complete-dialogue/`, {
       method: "POST",
       body: JSON.stringify({
         characterId,
