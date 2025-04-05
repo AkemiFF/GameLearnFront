@@ -14,24 +14,73 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Header } from "@/components/header"
 import { MathBackground } from "@/components/math-background"
+import { userAuth } from "@/lib/auth"
+import { apiClient } from "@/lib/api-client"
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+  const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || ""; // Define BASE_URL
+  const [formData, setFormData] = useState({ username: "", password: "" }); // Define formData and setFormData
 
-    // Simuler une connexion
-    setTimeout(() => {
-      setIsLoading(false)
-      router.push("/dashboard")
-    }, 1500)
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/auth/login/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          password,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data);
+        // Store the tokens
+        localStorage.setItem('access_token', data.access);
+        localStorage.setItem('refresh_token', data.refresh);
+        router.push("/games");
+      } else {
+        console.error("Login failed:", response.statusText);
+      }
+    } catch (error) {
+      console.error("An error occurred during login:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+  /*   const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsLoading(true);
+  
+      try {
+        const response = await apiClient.post(`${BASE_URL}/api/auth/login/`, formData);
+        if (response.status === 200) {
+          const res = response.data;
+          userAuth.save(res);
+          console.log(res);
+          router.push("/games");
+        } else {
+          console.error("Login failed:", response.statusText);
+        }
+      } catch (error) {
+        console.error("An error occurred during login:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }; */
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-background to-muted/50">
@@ -68,16 +117,16 @@ export default function LoginPage() {
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="username">Username</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
-                        id="email"
-                        type="email"
-                        placeholder="votre@email.com"
+                        id="username"
+                        type="username"
+                        placeholder="jean"
                         className="pl-9"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
                         required
                       />
                     </div>

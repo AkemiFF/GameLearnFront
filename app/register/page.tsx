@@ -54,11 +54,30 @@ export default function RegisterPage() {
     e.preventDefault()
     setIsLoading(true)
 
-    // Simuler une inscription
-    setTimeout(() => {
+    try {
+      const response = await fetch("http://localhost:8000/api/auth/register/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          username: firstName,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Une erreur est survenue lors de l'inscription")
+      }
+
       setIsLoading(false)
       router.push("/dashboard")
-    }, 1500)
+    } catch (error: any) {
+      setIsLoading(false)
+      alert(error.message)
+    }
   }
 
   return (

@@ -2,19 +2,24 @@
 
 import { BookOpen } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import remarkBreaks from "remark-breaks"
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 
 interface TheoryContentProps {
-  experimentId: string
+  experimentId: string | null
+  theoryContent: string | null
 }
 
-export function TheoryContent({ experimentId }: TheoryContentProps) {
-  if (experimentId !== "photosynthesis") {
+export function TheoryContent({ experimentId, theoryContent }: TheoryContentProps) {
+  if (!experimentId) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
         <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-medium mb-2">Contenu en développement</h3>
+        <h3 className="text-lg font-medium mb-2">Aucune expérience sélectionnée</h3>
         <p className="text-muted-foreground max-w-xs">
-          Le contenu théorique pour cette expérience sera disponible prochainement.
+          Veuillez sélectionner une expérience pour afficher le contenu théorique.
         </p>
       </div>
     )
@@ -30,69 +35,56 @@ export function TheoryContent({ experimentId }: TheoryContentProps) {
         <CardDescription>Comprendre les concepts derrière l'expérience</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">La photosynthèse</h3>
-          <p>
-            La photosynthèse est le processus par lequel les plantes, les algues et certaines bactéries convertissent
-            l'énergie lumineuse en énergie chimique. Ce processus est essentiel à la vie sur Terre car il produit de
-            l'oxygène et sert de base à la chaîne alimentaire.
-          </p>
-
-          <div className="rounded-lg border border-border bg-card/80 p-4">
-            <h4 className="font-medium mb-2">Équation simplifiée</h4>
-            <div className="font-mono text-center p-2 bg-muted rounded-md">
-              6 CO₂ + 6 H₂O + lumière → C₆H₁₂O₆ + 6 O₂
-            </div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Dioxyde de carbone + Eau + Énergie lumineuse → Glucose + Oxygène
-            </p>
-          </div>
-
-          <h4 className="text-md font-medium mt-4">Facteurs influençant la photosynthèse</h4>
-
-          <div className="space-y-3">
-            <div>
-              <h5 className="font-medium">Intensité lumineuse</h5>
-              <p className="text-sm text-muted-foreground">
-                La lumière fournit l'énergie nécessaire pour convertir le CO₂ et l'eau en glucose. Une intensité plus
-                élevée augmente généralement le taux de photosynthèse jusqu'à un certain point de saturation.
-              </p>
-            </div>
-
-            <div>
-              <h5 className="font-medium">Concentration en CO₂</h5>
-              <p className="text-sm text-muted-foreground">
-                Le dioxyde de carbone est un réactif clé. Sa disponibilité peut limiter le taux de photosynthèse,
-                surtout dans des environnements fermés.
-              </p>
-            </div>
-
-            <div>
-              <h5 className="font-medium">Disponibilité en eau</h5>
-              <p className="text-sm text-muted-foreground">
-                L'eau est nécessaire comme réactif et pour maintenir la turgescence des cellules. Le stress hydrique
-                réduit significativement la photosynthèse.
-              </p>
-            </div>
-
-            <div>
-              <h5 className="font-medium">Température</h5>
-              <p className="text-sm text-muted-foreground">
-                Les enzymes impliquées dans la photosynthèse fonctionnent de manière optimale à des températures
-                spécifiques, généralement entre 20°C et 30°C pour la plupart des plantes.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-border bg-card/80 p-4">
-          <h4 className="font-medium mb-2">Applications pratiques</h4>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>• Agriculture : optimisation des conditions de croissance des plantes</li>
-            <li>• Environnement : compréhension du cycle du carbone et de l'oxygène</li>
-            <li>• Biotechnologie : développement de cultures plus efficaces</li>
-            <li>• Écologie : étude des écosystèmes et de leur productivité</li>
-          </ul>
+        <div className="prose prose-sm dark:prose-invert max-w-none">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm, remarkBreaks]}
+            components={{
+              h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mt-6 mb-4" {...props} />,
+              h2: ({ node, ...props }) => <h2 className="text-xl font-bold mt-5 mb-3" {...props} />,
+              h3: ({ node, ...props }) => <h3 className="text-lg font-bold mt-4 mb-2" {...props} />,
+              h4: ({ node, ...props }) => <h4 className="text-base font-bold mt-3 mb-2" {...props} />,
+              p: ({ node, ...props }) => <p className="my-3" {...props} />,
+              ul: ({ node, ...props }) => <ul className="list-disc pl-6 my-3" {...props} />,
+              ol: ({ node, ...props }) => <ol className="list-decimal pl-6 my-3" {...props} />,
+              li: ({ node, ...props }) => <li className="my-1" {...props} />,
+              a: ({ node, ...props }) => <a className="text-primary hover:underline" {...props} />,
+              blockquote: ({ node, ...props }) => (
+                <blockquote className="border-l-4 border-primary/30 pl-4 italic my-4" {...props} />
+              ),
+              table: ({ node, ...props }) => (
+                <div className="overflow-x-auto my-4">
+                  <table className="min-w-full divide-y divide-border" {...props} />
+                </div>
+              ),
+              thead: ({ node, ...props }) => <thead className="bg-muted/50" {...props} />,
+              th: ({ node, ...props }) => (
+                <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider" {...props} />
+              ),
+              td: ({ node, ...props }) => <td className="px-3 py-2 whitespace-nowrap" {...props} />,
+              tr: ({ node, ...props }) => <tr className="border-b border-border" {...props} />,
+              code: ({ node, inline, className, children, ...props }) => {
+                const match = /language-(\w+)/.exec(className || "")
+                return !inline && match ? (
+                  <SyntaxHighlighter
+                    language={match[1]}
+                    PreTag="div"
+                    className="rounded-md my-4"
+                    {...props}
+                  >
+                    {String(children).replace(/\n$/, "")}
+                  </SyntaxHighlighter>
+                ) : (
+                  <code className="bg-muted px-1.5 py-0.5 rounded-md text-sm font-mono" {...props}>
+                    {children}
+                  </code>
+                )
+              },
+              img: ({ node, ...props }) => <img className="max-w-full h-auto rounded-md my-4" {...props} />,
+              hr: ({ node, ...props }) => <hr className="my-6 border-border" {...props} />,
+            }}
+          >
+            {theoryContent || ""}
+          </ReactMarkdown>
         </div>
       </CardContent>
     </Card>
