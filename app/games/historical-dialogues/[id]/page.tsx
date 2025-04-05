@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getDialogueForCharacter } from "@/data/dialogue-scenarios"
 import { useMobile } from "@/hooks/use-mobile"
-import { apiClient } from "@/lib/api-client"
+import { userAuth } from "@/lib/auth"
 import type { DialogueState, HistoricalCharacter, MessageType } from "@/types/historical-dialogues"
 import { ArrowLeft, Award, BookOpen, History, Home, MessageSquare } from "lucide-react"
 import Link from "next/link"
@@ -219,61 +219,44 @@ export default function HistoricalDialoguePage() {
     setCurrentMood("thinking")
 
     try {
-      // const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/historical_dialog/characters/${character.id}/chat/`, {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify({ message: inputValue }),
-      // })
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/historical_dialog/characters/${character.id}/chat/`,
+        {
+          method: "POST",
+          headers: {
+            ... await userAuth.getAuthHeader()
+          },
+          body: JSON.stringify({ message: inputValue }),
+        },
+      )
 
-      const response = await apiClient.post(`${process.env.NEXT_PUBLIC_API_URL}/historical_dialog/characters/${character.id}/chat/`, { message: inputValue });
-
-      if (response.status === 200) {
-        const reader = response.data?.getReader()
-
-        let responseText = ""
-        let newMood: "neutral" | "happy" | "surprised" | "thinking" = "neutral"
-        const newFact: string | null = null
-
-        while (true) {
-          const { done, value } = await reader!.read()
-          if (done) {
-            break
-          }
-
-          const chunk = new TextDecoder().decode(value)
-          responseText += chunk
-
-          try {
-            const parsedResponse = JSON.parse(responseText)
-            newMood = parsedResponse.mood || "neutral"
-            responseText = parsedResponse.response
-          } catch (error) {
-            console.error("Error parsing stream chunk:", error)
-          }
-
-          // Create JSON response with mood
-          const responseJson = {
-            mood: newMood,
-            message: responseText,
-          }
-
-          // Add character response with typing indicator
-          const characterMessage: MessageType = {
-            id: `char-${Date.now()}`,
-            sender: "character",
-            content: JSON.stringify(responseJson),
-            isTyping: true,
-            mood: newMood,
-          }
-
-          setMessages((prev) => [...prev, characterMessage])
-          setCurrentMood(newMood)
-        }
-      } else {
+      if (!response.ok) {
         throw new Error(`Failed to send message: ${response.status}`)
       }
+
+
+      const responseData = await response.json()
+      const parsedResponse = responseData as AIResponseType
+      const newMood = parsedResponse.mood || "neutral"
+      const responseText = parsedResponse.message
+
+      // Create JSON response with mood
+      const responseJson = {
+        mood: newMood,
+        message: responseText,
+      }
+
+      // Add character response
+      const characterMessage: MessageType = {
+        id: `char-${Date.now()}`,
+        sender: "character",
+        content: JSON.stringify(responseJson),
+        isTyping: false,
+        mood: newMood,
+      }
+
+      setMessages((prev) => [...prev, characterMessage])
+      setCurrentMood(newMood)
     } catch (error) {
       console.error("Failed to fetch AI response:", error)
     }
@@ -491,19 +474,19 @@ export default function HistoricalDialoguePage() {
                 </div>
 
                 {/* Input area (only in free-chat state) */}
-                {dialogueState === "free-chat" && (
-                  <div className="mt-4">
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Posez une question..."
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                      />
-                      <Button onClick={handleSendMessage}>Envoyer</Button>
-                    </div>
+                {/* {dialogueState === "free-chat" && ( */}
+                <div className="mt-4">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Posez une question..."
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                    />
+                    <Button onClick={handleSendMessage}>Envoyer</Button>
                   </div>
-                )}
+                </div>
+                {/* )} */}
               </TabsContent>
 
               <TabsContent
