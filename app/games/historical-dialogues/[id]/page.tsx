@@ -1,35 +1,45 @@
 "use client"
 
 import { CharacterIllustration } from "@/components/historical-dialogues/character-illustration"
-import { FactCard } from "@/components/historical-dialogues/fact-card"
 import { QuizQuestion } from "@/components/historical-dialogues/quiz-question"
 import { TypingEffect } from "@/components/historical-dialogues/typing-effect"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getDialogueForCharacter } from "@/data/dialogue-scenarios"
 import { historicalCharacters } from "@/data/historical-characters"
 import { useMobile } from "@/hooks/use-mobile"
+import type { DialogueState, HistoricalCharacter, MessageType } from "@/types/historical-dialogues"
 import { ArrowLeft, Award, BookOpen, History, Home, MessageSquare } from "lucide-react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
+import type React from "react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
-type MessageType = {
-  id: string
-  sender: "user" | "character"
-  content: string
-  isTyping?: boolean
-  mood?: "neutral" | "happy" | "thinking" | "surprised"
-}
-
-type DialogueState = "intro" | "free-chat" | "quiz" | "conclusion"
-
-// Type for AI response JSON
 type AIResponseType = {
   mood: "neutral" | "happy" | "thinking" | "surprised"
   message: string
+}
+
+type FactCardProps = {
+  fact: string
+  character: HistoricalCharacter
+}
+
+const FactCard: React.FC<FactCardProps> = ({ fact, character }) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Fait intéressant sur {character.name}</CardTitle>
+        <CardDescription>{character.period}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p>{fact}</p>
+      </CardContent>
+    </Card>
+  )
 }
 
 export default function HistoricalDialoguePage() {
@@ -38,15 +48,14 @@ export default function HistoricalDialoguePage() {
   const params = useParams<{ id: string }>()
   const characterId = params?.id
 
-
-  // Find character data
-  const character = historicalCharacters.find((c) => c.id === characterId)
-
+  const [isLoading, setIsLoading] = useState(true)
+  const [character, setCharacter] = useState<HistoricalCharacter | undefined>(undefined)
+  const [dialogueScenario, setDialogueScenario] = useState(null)
   // Game state
   const [messages, setMessages] = useState<MessageType[]>([])
   const [inputValue, setInputValue] = useState("")
   const [dialogueState, setDialogueState] = useState<DialogueState>("intro")
-  const [currentMood, setCurrentMood] = useState<"neutral" | "happy" | "thinking" | "surprised">("neutral")
+  const [currentMood, setCurrentMood] = useState<"neutral" | "happy" | "thinking" | "surprised">("thinking")
   const [discoveredFacts, setDiscoveredFacts] = useState<string[]>([])
   const [score, setScore] = useState(0)
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0)
@@ -56,28 +65,37 @@ export default function HistoricalDialoguePage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const initializedRef = useRef(false)
 
-  // Get dialogue scenario
-  const dialogueScenario = character ? getDialogueForCharacter(character.id) : null
-
-  // If character not found, redirect to main page
   useEffect(() => {
-    if (!character) {
-      router.push("/games/historical-dialogues")
+    const fetchCharacterAndScenario = async () => {
+      if (!characterId) {
+        router.push("/games/historical-dialogues")
+        return
+      }
+
+      const foundCharacter = historicalCharacters.find((c) => c.id === characterId)
+      if (!foundCharacter) {
+        router.push("/games/historical-dialogues")
+        return
+      }
+
+      setCharacter(foundCharacter)
+      setDialogueScenario(getDialogueForCharacter(foundCharacter.id))
+      setIsLoading(false)
     }
-  }, [character, router])
+
+    fetchCharacterAndScenario()
+  }, [characterId, router])
 
   // Parse AI response JSON
   const parseAIResponse = (text: string): { parsedResponse: AIResponseType | null; plainText: string } => {
     try {
-      // Check if the text starts with a JSON structure
-      if (text.trim().startsWith("{") && text.includes('"mood"') && text.includes('"message"')) {
+      if (text?.trim().startsWith("{") && text.includes('"mood"') && text.includes('"message"')) {
         const jsonEndIndex = text.indexOf("}") + 1
         const jsonPart = text.substring(0, jsonEndIndex)
         const remainingText = text.substring(jsonEndIndex).trim()
 
         const parsedJson = JSON.parse(jsonPart) as AIResponseType
 
-        // Return the parsed JSON and the remaining text (if any)
         return {
           parsedResponse: parsedJson,
           plainText: parsedJson.message + (remainingText ? " " + remainingText : ""),
@@ -367,7 +385,7 @@ export default function HistoricalDialoguePage() {
     }
   }
 
-  if (!character || !dialogueScenario) {
+  if (isLoading || !character || !dialogueScenario) {
     return <div className="flex items-center justify-center h-screen">Chargement...</div>
   }
 
