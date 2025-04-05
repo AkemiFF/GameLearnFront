@@ -2,20 +2,19 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { BookOpen, ArrowRight, Mail, Lock, Eye, EyeOff } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Header } from "@/components/header"
 import { MathBackground } from "@/components/math-background"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { userAuth } from "@/lib/auth"
-import { apiClient } from "@/lib/api-client"
+import { motion } from "framer-motion"
+import { ArrowRight, BookOpen, Eye, EyeOff, Lock, Mail } from "lucide-react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -27,60 +26,71 @@ export default function LoginPage() {
   const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || ""; // Define BASE_URL
   const [formData, setFormData] = useState({ username: "", password: "" }); // Define formData and setFormData
 
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setIsLoading(true);
+
+  //   try {
+  //     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login/`, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         username,
+  //         password,
+  //       }),
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log(data);
+  //       // Store the tokens
+  //       localStorage.setItem('access_token', data.access);
+  //       localStorage.setItem('refresh_token', data.refresh);
+  //       router.push("/games");
+  //     } else {
+  //       console.error("Login failed:", response.statusText);
+  //     }
+  //   } catch (error) {
+  //     console.error("An error occurred during login:", error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
+    console.log({ username, password });
+
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/login/', {
+      const response = await fetch(`${BASE_URL}/accounts/login/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          username,
-          password,
-        }),
+        body: JSON.stringify({ username, password }),
       });
+      if (!response.ok) {
+        console.error("Login failed:", response.statusText);
 
-      if (response.ok) {
+
+      } else {
         const data = await response.json();
         console.log(data);
-        // Store the tokens
-        localStorage.setItem('access_token', data.access);
-        localStorage.setItem('refresh_token', data.refresh);
+        userAuth.save(data);
         router.push("/games");
-      } else {
-        console.error("Login failed:", response.statusText);
       }
+
     } catch (error) {
       console.error("An error occurred during login:", error);
     } finally {
       setIsLoading(false);
     }
   };
-
-
-  /*   const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setIsLoading(true);
-  
-      try {
-        const response = await apiClient.post(`${BASE_URL}/api/auth/login/`, formData);
-        if (response.status === 200) {
-          const res = response.data;
-          userAuth.save(res);
-          console.log(res);
-          router.push("/games");
-        } else {
-          console.error("Login failed:", response.statusText);
-        }
-      } catch (error) {
-        console.error("An error occurred during login:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }; */
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-background to-muted/50">

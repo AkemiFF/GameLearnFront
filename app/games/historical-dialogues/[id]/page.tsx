@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getDialogueForCharacter } from "@/data/dialogue-scenarios"
 import { useMobile } from "@/hooks/use-mobile"
+import { apiClient } from "@/lib/api-client"
 import type { DialogueState, HistoricalCharacter, MessageType } from "@/types/historical-dialogues"
 import { ArrowLeft, Award, BookOpen, History, Home, MessageSquare } from "lucide-react"
 import Link from "next/link"
@@ -218,57 +219,60 @@ export default function HistoricalDialoguePage() {
     setCurrentMood("thinking")
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/historical_dialog/characters/${character.id}/chat/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message: inputValue }),
-      })
+      // const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/historical_dialog/characters/${character.id}/chat/`, {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify({ message: inputValue }),
+      // })
 
-      if (!response.ok) {
+      const response = await apiClient.post(`${process.env.NEXT_PUBLIC_API_URL}/historical_dialog/characters/${character.id}/chat/`, { message: inputValue });
+
+      if (response.status === 200) {
+        const reader = response.data?.getReader()
+
+        let responseText = ""
+        let newMood: "neutral" | "happy" | "surprised" | "thinking" = "neutral"
+        const newFact: string | null = null
+
+        while (true) {
+          const { done, value } = await reader!.read()
+          if (done) {
+            break
+          }
+
+          const chunk = new TextDecoder().decode(value)
+          responseText += chunk
+
+          try {
+            const parsedResponse = JSON.parse(responseText)
+            newMood = parsedResponse.mood || "neutral"
+            responseText = parsedResponse.response
+          } catch (error) {
+            console.error("Error parsing stream chunk:", error)
+          }
+
+          // Create JSON response with mood
+          const responseJson = {
+            mood: newMood,
+            message: responseText,
+          }
+
+          // Add character response with typing indicator
+          const characterMessage: MessageType = {
+            id: `char-${Date.now()}`,
+            sender: "character",
+            content: JSON.stringify(responseJson),
+            isTyping: true,
+            mood: newMood,
+          }
+
+          setMessages((prev) => [...prev, characterMessage])
+          setCurrentMood(newMood)
+        }
+      } else {
         throw new Error(`Failed to send message: ${response.status}`)
-      }
-
-      const reader = response.body?.getReader()
-      let responseText = ""
-      let newMood: "neutral" | "happy" | "surprised" | "thinking" = "neutral"
-      const newFact: string | null = null
-
-      while (true) {
-        const { done, value } = await reader!.read()
-        if (done) {
-          break
-        }
-
-        const chunk = new TextDecoder().decode(value)
-        responseText += chunk
-
-        try {
-          const parsedResponse = JSON.parse(responseText)
-          newMood = parsedResponse.mood || "neutral"
-          responseText = parsedResponse.response
-        } catch (error) {
-          console.error("Error parsing stream chunk:", error)
-        }
-
-        // Create JSON response with mood
-        const responseJson = {
-          mood: newMood,
-          message: responseText,
-        }
-
-        // Add character response with typing indicator
-        const characterMessage: MessageType = {
-          id: `char-${Date.now()}`,
-          sender: "character",
-          content: JSON.stringify(responseJson),
-          isTyping: true,
-          mood: newMood,
-        }
-
-        setMessages((prev) => [...prev, characterMessage])
-        setCurrentMood(newMood)
       }
     } catch (error) {
       console.error("Failed to fetch AI response:", error)
