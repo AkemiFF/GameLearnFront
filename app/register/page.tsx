@@ -2,19 +2,20 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { BookOpen, ArrowRight, Mail, Lock, Eye, EyeOff, User, School } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Header } from "@/components/header"
 import { MathBackground } from "@/components/math-background"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { BASE_URL } from "@/lib/host"
+import { motion } from "framer-motion"
+import { ArrowRight, BookOpen, Eye, EyeOff, Lock, Mail, School, User } from "lucide-react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -55,7 +56,7 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch("http://localhost:8000/api/auth/register/", {
+      const response = await fetch(`${BASE_URL}/accounts/register/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -73,7 +74,7 @@ export default function RegisterPage() {
       }
 
       setIsLoading(false)
-      router.push("/dashboard")
+      router.push("/login")
     } catch (error: any) {
       setIsLoading(false)
       alert(error.message)

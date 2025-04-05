@@ -1,5 +1,5 @@
 "use client"
-import type { HistoricalCharacter } from "@/data/historical-characters"
+import { HistoricalCharacter } from "@/types/historical-dialogues"
 import Image from "next/image"
 import { useEffect, useState } from "react"
 
@@ -33,7 +33,7 @@ export function CharacterIllustration({ character, mood, message, isTyping }: Ch
           className="object-contain z-10 relative drop-shadow-lg"
           onError={(e) => {
             const target = e.target as HTMLImageElement
-            target.src = `/images/historical-characters/default.png`
+            // target.src = `/images/historical-characters/default.png`
           }}
         />
 

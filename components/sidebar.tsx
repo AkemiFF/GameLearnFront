@@ -1,11 +1,11 @@
 "use client"
 
-import { BookOpen, Calendar, Gamepad2, LayoutDashboard, LogOut, Settings, Trophy, Users, Sun, Moon } from "lucide-react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { BookOpen, Calendar, Gamepad2, LayoutDashboard, LogOut, Moon, Settings, Sun, Trophy, Users } from "lucide-react"
 import { useTheme } from "next-themes"
-import { useState, useEffect } from "react"
+import Link from "next/link"
+import { useEffect, useState } from "react"
 
 interface SidebarProps {
   activePage?: "dashboard" | "games" | "progress" | "calendar" | "settings" | "admin" | "content" | "students"
@@ -38,7 +38,7 @@ export function Sidebar({
     <aside className="hidden w-64 flex-col border-r bg-background p-6 md:flex">
       <div className="flex items-center gap-2 pb-6">
         <BookOpen className="h-6 w-6 text-primary" />
-        <span className="text-xl font-bold">EduPlay Studio</span>
+        <span className="text-xl font-bold">Nexus Game</span>
       </div>
 
       <nav className="flex-1 space-y-2">
