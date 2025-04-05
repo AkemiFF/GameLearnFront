@@ -1,16 +1,16 @@
 "use client"
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import { BookOpen, Clock, Filter, Gamepad2, Search, Trophy } from "lucide-react"
-import Link from "next/link"
+import { Sidebar } from "@/components/sidebar"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Sidebar } from "@/components/sidebar"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { motion } from "framer-motion"
+import { BookOpen, Clock, Filter, Gamepad2, Search, Trophy } from 'lucide-react'
+import Link from "next/link"
+import { useState } from "react"
 
 export default function GamesPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -465,4 +465,3 @@ function MessageSquare(props) {
     </svg>
   )
 }
-
