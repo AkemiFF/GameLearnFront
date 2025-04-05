@@ -4,7 +4,18 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Home, Beaker, HelpCircle, Settings, Maximize, Minimize } from "lucide-react"
+import {
+  ArrowLeft,
+  Home,
+  Beaker,
+  HelpCircle,
+  Settings,
+  Maximize,
+  Minimize,
+  PlayIcon,
+  CheckIcon,
+  LockIcon,
+} from "lucide-react"
 import { useTheme } from "next-themes"
 
 import { Button } from "@/components/ui/button"
@@ -13,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useFullscreen } from "@/hooks/use-fullscreen"
+import { toast } from "@/components/ui/use-toast"
 
 // Import components
 import { SimulationCanvas } from "@/components/biosim/simulation-canvas"
@@ -36,20 +48,33 @@ interface Experiment {
   icon: string
   image: string
   theory_content: string
+  variables: string[] // Add the missing 'variables' property
 }
 
-interface ExperimentVariable {
+export interface ExperimentVariable {
+  id: number;
+  name: string;
+  display_name: string;
+  description: string;
+  min_value: number;
+  max_value: number;
+  default_value: number;
+  unit: string;
+  color: string;
+  icon: string;
+}
+
+
+// Interface pour les résultats attendus
+interface ExpectedResult {
   id: number
   name: string
-  display_name: string
   description: string
-  min_value: number
-  max_value: number
-  default_value: number
+  expected_value: number
+  tolerance: number
   unit: string
-  color: string
-  icon: string
-  order: number
+  experiment: string
+  variable: number
 }
 
 // Tutorial steps
@@ -101,6 +126,7 @@ const initialExperiments = [
     image: "http://localhost:8000/experiments/Acces_granted_fjKsLx2.jpg",
     theory_content:
       '### Endpoints API pour BioSim et Escape Game\r\n\r\n## Endpoints BioSim\r\n\r\n### Gestion des expériences\r\n\r\n- **GET /api/biosim/experiments/** - Liste toutes les expériences disponibles\r\n- **GET /api/biosim/experiments/id/** - Détails d\'une expérience spécifique\r\n- **POST /api/biosim/experiments/** - Crée une nouvelle expérience (admin uniquement)\r\n- **PUT /api/biosim/experiments/id/** - Met à jour une expérience (admin uniquement)\r\n- **DELETE /api/biosim/experiments/id/** - Supprime une expérience (admin uniquement)\r\n- **GET /api/biosim/experiments/featured/** - Liste les expériences mises en avant\r\n\r\n\r\n### Variables d\'expérience\r\n\r\n- **GET /api/biosim/variables/** - Liste toutes les variables\r\n- **GET /api/biosim/variables/id/** - Détails d\'une variable spécifique\r\n- **GET /api/biosim/experiments/experiment_id/variables/** - Variables pour une expérience spécifique\r\n- **POST /api/biosim/variables/** - Crée une nouvelle variable (admin uniquement)\r\n- **PUT /api/biosim/variables/id/** - Met à jour une variable (admin uniquement)\r\n\r\n\r\n### Résultats de simulation\r\n\r\n- **GET /api/biosim/results/** - Liste les résultats de l\'utilisateur connecté\r\n- **GET /api/biosim/results/id/** - Détails d\'un résultat spécifique\r\n- **POST /api/biosim/results/** - Enregistre un nouveau résultat de simulation\r\n- **GET /api/biosim/experiments/experiment_id/results/** - Résultats pour une expérience spécifique\r\n- **GET /api/biosim/results/stats/** - Statistiques sur les résultats de l\'utilisateur\r\n\r\n\r\n### Notes utilisateur\r\n\r\n- **GET /api/biosim/notes/** - Liste les notes de l\'utilisateur connecté\r\n- **GET /api/biosim/notes/id/** - Détails d\'une note spécifique\r\n- **POST /api/biosim/notes/** - Crée une nouvelle note\r\n- **PUT /api/biosim/notes/id/** - Met à jour une note\r\n- **DELETE /api/biosim/notes/id/** - Supprime une note\r\n- **GET /api/biosim/experiments/experiment_id/notes/** - Notes pour une expérience spécifique\r\n\r\n\r\n### Réalisations\r\n\r\n- **GET /api/biosim/achievements/** - Liste toutes les réalisations disponibles\r\n- **GET /api/biosim/achievements/id/** - Détails d\'une réalisation spécifique\r\n- **GET /api/biosim/user-achievements/** - Réalisations débloquées par l\'utilisateur\r\n- **POST /api/biosim/user-achievements/unlock/achievement_id/** - Débloque une réalisation\r\n\r\n\r\n### Préférences utilisateur\r\n\r\n- **GET /api/biosim/preferences/** - Obtient les préférences de l\'utilisateur\r\n- **PUT /api/biosim/preferences/** - Met à jour les préférences de l\'utilisateur\r\n\r\n## Format des requêtes et réponses\r\n\r\nToutes les API renvoient et acceptent des données au format JSON. Voici un exemple de réponse pour une requête d\'expérience BioSim :\r\n\r\n```json\r\n{\r\n  "id": 1,\r\n  "title": "Photosynthèse",\r\n  "description": "Explorez le processus de photosynthèse dans les plantes",\r\n  "difficulty": "MEDIUM",\r\n  "subject": "BIOLOGY",\r\n  "thumbnail_url": "/media/experiments/photosynthesis.jpg",\r\n  "created_at": "2023-04-15T10:30:00Z",\r\n  "updated_at": "2023-04-15T10:30:00Z",\r\n  "is_featured": true,\r\n  "variables": [\r\n    {\r\n      "id": 1,\r\n      "name": "light_intensity",\r\n      "display_name": "Intensité lumineuse",\r\n      "min_value": 0,\r\n      "max_value": 100,\r\n      "default_value": 50,\r\n      "unit": "lux"\r\n    },\r\n    {\r\n      "id": 2,\r\n      "name": "co2_level",\r\n      "display_name": "Niveau de CO2",\r\n      "min_value": 0,\r\n      "max_value": 1000,\r\n      "default_value": 400,\r\n      "unit": "ppm"\r\n    }\r\n  ]\r\n}\r\n```',
+    variables: [],
   },
   {
     id: "0",
@@ -111,6 +137,7 @@ const initialExperiments = [
     icon: "plante",
     image: "http://localhost:8000/experiments/Acces_granted.jpg",
     theory_content: "Pour le teste",
+    variables: [],
   },
 ]
 
@@ -131,9 +158,13 @@ export default function BioSimPage() {
   const [highQuality, setHighQuality] = useState(true)
   const [soundEnabled, setSoundEnabled] = useState(true)
 
+  // Ajouter ces états dans le composant BioSimPage
+  const [isSavingNotes, setIsSavingNotes] = useState(false)
+  const [simulationStartTime, setSimulationStartTime] = useState<Date | null>(null)
   // Data state
   const [experiments, setExperiments] = useState<Experiment[]>(initialExperiments)
   const [experimentVariables, setExperimentVariables] = useState<ExperimentVariable[]>([])
+  const [expectedResults, setExpectedResults] = useState<ExpectedResult[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -142,13 +173,30 @@ export default function BioSimPage() {
   const [simulationSpeed, setSimulationSpeed] = useState(1)
   const [simulationTime, setSimulationTime] = useState(0)
   const [showResults, setShowResults] = useState(false)
-  const [variableValues, setVariableValues] = useState<Record<string, number>>({})
+  const [variableValues, setVariableValues] = useState<{
+    light: number
+    co2: number
+    water: number
+    temperature: number
+  }>({
+    light: 0,
+    co2: 0,
+    water: 0,
+    temperature: 0,
+  })
+
+  // Correction des erreurs de syntaxe pour les états results et achievements
   const [results, setResults] = useState({
     oxygenProduced: 0,
     glucoseProduced: 0,
     plantGrowth: 0,
     efficiency: 0,
+    variableScores: {} as Record<
+      number,
+      { score: number; expected: number; actual: number; unit: string; name: string }
+    >,
   })
+
   const [achievements, setAchievements] = useState([
     {
       id: "first_experiment",
@@ -180,16 +228,16 @@ export default function BioSimPage() {
     const fetchExperiments = async () => {
       try {
         setLoading(true)
-        //const response = await fetch("http://localhost:8000/api/biosim/experiments/")
-        //if (!response.ok) {
-        //  throw new Error(`Error ${response.status}: ${response.statusText}`)
-        //}
-        //const data = await response.json()
-        //setExperiments(data)
+        const response = await fetch("http://localhost:8000/api/biosim/experiments/")
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`)
+        }
+        const data = await response.json()
+        setExperiments(data)
         // Select first experiment by default if available
-        //if (data.length > 0 && !selectedExperimentId) {
-        //  setSelectedExperimentId(data[0].id)
-        //}
+        if (data.length > 0 && !selectedExperimentId) {
+          setSelectedExperimentId(data[0].id)
+        }
       } catch (error) {
         console.error("Error fetching experiments:", error)
         setError("Impossible de charger les expériences. Veuillez réessayer plus tard.")
@@ -199,7 +247,7 @@ export default function BioSimPage() {
     }
 
     fetchExperiments()
-  }, [])
+  }, [selectedExperimentId])
 
   // Fetch variables for selected experiment
   useEffect(() => {
@@ -220,7 +268,12 @@ export default function BioSimPage() {
         data.forEach((variable: ExperimentVariable) => {
           initialValues[variable.name] = variable.default_value
         })
-        setVariableValues(initialValues)
+        setVariableValues({
+          light: initialValues.light || 0,
+          co2: initialValues.co2 || 0,
+          water: initialValues.water || 0,
+          temperature: initialValues.temperature || 0,
+        })
       } catch (error) {
         console.error("Error fetching variables:", error)
         setError("Impossible de charger les variables. Veuillez réessayer plus tard.")
@@ -232,8 +285,121 @@ export default function BioSimPage() {
     fetchVariables()
   }, [selectedExperimentId])
 
+  // Fetch expected results for selected experiment
+  useEffect(() => {
+    const fetchExpectedResults = async () => {
+      if (!selectedExperimentId) return
+
+      try {
+        setLoading(true)
+        const response = await fetch("http://localhost:8000/api/biosim/expected-results/")
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`)
+        }
+        const data = await response.json()
+
+        // Filter results for the current experiment
+        const filteredResults = data.filter((result: ExpectedResult) => result.experiment === selectedExperimentId)
+
+        setExpectedResults(filteredResults)
+      } catch (error) {
+        console.error("Error fetching expected results:", error)
+        setError("Impossible de charger les résultats attendus. Veuillez réessayer plus tard.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchExpectedResults()
+  }, [selectedExperimentId])
+
   // Get current experiment
   const currentExperiment = experiments.find((exp) => exp.id === selectedExperimentId) || null
+
+  // Calculate score for a variable based on how close it is to the expected value
+  const calculateVariableScore = useCallback(
+    (variableId: number, value: number) => {
+      const expectedResult = expectedResults.find((result) => result.variable === variableId)
+
+      if (!expectedResult) return { score: 0, expected: 0, actual: value, unit: "", name: "Inconnue" }
+
+      const { expected_value, tolerance, unit, name } = expectedResult
+
+      // Calculate how far the value is from the expected value
+      const difference = Math.abs(value - expected_value)
+
+      // If within tolerance, score is between 0.5 and 1.0 based on how close it is
+      if (difference <= tolerance) {
+        // Perfect score if exactly matching
+        if (difference === 0) return { score: 1.0, expected: expected_value, actual: value, unit, name }
+
+        // Otherwise, score between 0.5 and 1.0 based on proximity
+        const score = 1.0 - difference / (tolerance * 2)
+        return { score: Math.max(0.5, score), expected: expected_value, actual: value, unit, name }
+      }
+
+      // If outside tolerance, score is between 0.0 and 0.5 based on how far it is
+      // The further away, the closer to 0
+      const maxDifference = expected_value * 2 // Arbitrary maximum difference
+      const score = 0.5 * (1 - Math.min(1, (difference - tolerance) / maxDifference))
+      return { score: Math.max(0, score), expected: expected_value, actual: value, unit, name }
+    },
+    [expectedResults],
+  )
+
+  // Update results based on variables
+  const updateResults = useCallback(() => {
+    // Map variable names to their IDs for easier lookup
+    const variableNameToId: Record<string, number> = {}
+    experimentVariables.forEach((variable) => {
+      variableNameToId[variable.name] = variable.id
+    })
+
+    // Calculate scores for each variable
+    const variableScores: Record<
+      number,
+      { score: number; expected: number; actual: number; unit: string; name: string }
+    > = {}
+    let totalScore = 0
+    let variablesWithExpectedResults = 0
+
+    // Process each variable that has a value set by the user
+    Object.entries(variableValues).forEach(([variableName, value]) => {
+      const variableId = variableNameToId[variableName]
+      if (!variableId) return
+
+      const scoreData = calculateVariableScore(variableId, value)
+      variableScores[variableId] = scoreData
+
+      // Only count variables that have expected results
+      if (expectedResults.some((result) => result.variable === variableId)) {
+        totalScore += scoreData.score
+        variablesWithExpectedResults++
+      }
+    })
+
+    // Calculate overall efficiency (average of all variable scores)
+    const efficiency = variablesWithExpectedResults > 0 ? totalScore / variablesWithExpectedResults : 0
+
+    // Set results based on efficiency
+    setResults({
+      oxygenProduced: efficiency * 50,
+      glucoseProduced: efficiency * 30,
+      plantGrowth: efficiency * 20,
+      efficiency,
+      variableScores,
+    })
+
+    // Check for achievements
+    if (efficiency >= 0.9 && !achievements.find((a) => a.id === "optimal_conditions")?.unlocked) {
+      const newAchievements = [...achievements]
+      const index = newAchievements.findIndex((a) => a.id === "optimal_conditions")
+      if (index !== -1) {
+        newAchievements[index].unlocked = true
+        setAchievements(newAchievements)
+      }
+    }
+  }, [variableValues, experimentVariables, expectedResults, achievements, calculateVariableScore])
 
   // Simulation logic
   useEffect(() => {
@@ -254,38 +420,14 @@ export default function BioSimPage() {
     }, 100)
 
     return () => clearInterval(interval)
-  }, [simulationRunning, simulationSpeed, variableValues])
+  }, [simulationRunning, simulationSpeed, updateResults])
 
-  // Update results based on variables
-  const updateResults = useCallback(() => {
-    // Simplified calculation for demo purposes
-    // In a real app, this would use the actual variable values from the API
-    const efficiency =
-      Object.values(variableValues).reduce((sum, val) => sum + val, 0) / (Object.keys(variableValues).length * 100)
-
-    setResults({
-      oxygenProduced: efficiency * 50,
-      glucoseProduced: efficiency * 30,
-      plantGrowth: efficiency * 20,
-      efficiency: efficiency,
-    })
-
-    // Check for achievements
-    if (efficiency >= 0.9 && !achievements.find((a) => a.id === "optimal_conditions")?.unlocked) {
-      const newAchievements = [...achievements]
-      const index = newAchievements.findIndex((a) => a.id === "optimal_conditions")
-      if (index !== -1) {
-        newAchievements[index].unlocked = true
-        setAchievements(newAchievements)
-      }
-    }
-  }, [variableValues, achievements])
-
-  // Start simulation
+  // Modifier la fonction startSimulation pour enregistrer l'heure de début
   const startSimulation = useCallback(() => {
     setSimulationRunning(true)
     setSimulationTime(0)
     setShowResults(false)
+    setSimulationStartTime(new Date())
 
     // Unlock first experiment achievement if not already unlocked
     if (!achievements.find((a) => a.id === "first_experiment")?.unlocked) {
@@ -309,13 +451,19 @@ export default function BioSimPage() {
     experimentVariables.forEach((variable) => {
       defaultValues[variable.name] = variable.default_value
     })
-    setVariableValues(defaultValues)
+    setVariableValues({
+      light: defaultValues.light || 0,
+      co2: defaultValues.co2 || 0,
+      water: defaultValues.water || 0,
+      temperature: defaultValues.temperature || 0,
+    })
 
     setResults({
       oxygenProduced: 0,
       glucoseProduced: 0,
       plantGrowth: 0,
       efficiency: 0,
+      variableScores: {},
     })
   }, [experimentVariables])
 
@@ -380,6 +528,111 @@ export default function BioSimPage() {
     // This is a simplified version - in a real app, you'd map icon names to actual components
     return <Beaker className="h-5 w-5" />
   }
+
+  // Ajouter cette fonction pour sauvegarder les résultats et les notes
+  const saveResultsAndNotes = useCallback(
+    async (title: string, content: string) => {
+      if (!selectedExperimentId || !currentExperiment) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de sauvegarder les résultats: aucune expérience sélectionnée.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      setIsSavingNotes(true)
+
+      try {
+        // Calculer la durée de l'expérience en secondes
+        const duration = simulationStartTime
+          ? Math.round((new Date().getTime() - simulationStartTime.getTime()) / 1000)
+          : 300 // 5 minutes par défaut
+
+        // Préparer les données des résultats
+        const resultsData = {
+          experiment: selectedExperimentId,
+          variables_config: variableValues,
+          results_data: {
+            oxygenProduced: results.oxygenProduced,
+            glucoseProduced: results.glucoseProduced,
+            plantGrowth: results.plantGrowth,
+            efficiency: results.efficiency,
+            variableScores: results.variableScores,
+          },
+          notes: content,
+          duration: duration,
+          completed: true,
+        }
+
+        // Envoyer les résultats à l'API
+        const resultsResponse = await fetch("http://localhost:8000/api/biosim/results/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(resultsData),
+        })
+
+        if (!resultsResponse.ok) {
+          throw new Error(`Erreur lors de l'enregistrement des résultats: ${resultsResponse.status}`)
+        }
+
+        // Préparer les données des notes
+        const notesData = {
+          experiment: selectedExperimentId,
+          experiment_title: currentExperiment.title,
+          title: title,
+          content: content,
+        }
+
+        // Envoyer les notes à l'API
+        const notesResponse = await fetch("http://localhost:8000/api/biosim/notes/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(notesData),
+        })
+
+        if (!notesResponse.ok) {
+          throw new Error(`Erreur lors de l'enregistrement des notes: ${notesResponse.status}`)
+        }
+
+        // Débloquer l'achievement si l'efficacité est supérieure à 90%
+        if (results.efficiency >= 0.9) {
+          try {
+            await fetch("http://localhost:8000/api/biosim/user-achievements/unlock/optimal_conditions/", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            })
+          } catch (error) {
+            console.error("Erreur lors du déblocage de l'achievement:", error)
+          }
+        }
+
+        toast({
+          title: "Succès",
+          description: "Vos résultats et notes ont été enregistrés avec succès.",
+        })
+
+        // Passer à l'onglet des notes
+        setActiveTab("notes")
+      } catch (error) {
+        console.error("Erreur lors de la sauvegarde:", error)
+        toast({
+          title: "Erreur",
+          description: "Une erreur est survenue lors de l'enregistrement de vos données.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsSavingNotes(false)
+      }
+    },
+    [selectedExperimentId, currentExperiment, variableValues, results, simulationStartTime],
+  )
 
   return (
     <div
@@ -507,11 +760,11 @@ export default function BioSimPage() {
                       <div className="flex items-center gap-2">
                         {achievement.unlocked ? (
                           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
-                            <Check className="h-3 w-3" />
+                            <CheckIcon className="h-3 w-3" />
                           </div>
                         ) : (
                           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-white/40">
-                            <Lock className="h-3 w-3" />
+                            <LockIcon className="h-3 w-3" />
                           </div>
                         )}
                         <p className="font-medium">{achievement.title}</p>
@@ -564,23 +817,29 @@ export default function BioSimPage() {
                     {/* Simulation area */}
                     <Card className="border-border bg-card/80 backdrop-blur-sm overflow-hidden">
                       <CardHeader className="border-b border-border bg-card/80">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="flex items-center gap-2">
-                            {currentExperiment && getIconComponent(currentExperiment.icon)}
-                            <span>{currentExperiment?.title || "Sélectionnez une expérience"}</span>
-                          </CardTitle>
-                        </div>
-
-                        {simulationRunning && (
-                          <div className="mt-2 space-y-1">
-                            <div className="flex items-center justify-between text-sm">
-                              <span>Progression</span>
-                              <span>{Math.round(simulationTime)}%</span>
-                            </div>
-                            <Progress value={simulationTime} className="h-1" />
-                          </div>
-                        )}
                       </CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2">
+                          {currentExperiment && getIconComponent(currentExperiment.icon)}
+                          <span>{currentExperiment?.title || "Sélectionnez une expérience"}</span>
+                        </CardTitle>
+                      </div>
+
+                      {simulationRunning && (
+                        <div className="mt-2 space-y-1">
+                          <div className="flex items-center justify-between text-sm">
+                            <span>Progression</span>
+                            <span>{Math.round(simulationTime)}%</span>
+                          </div>
+                          <Progress value={simulationTime} className="h-1" />
+                        </div>
+                      )}
+                      variables={Object.entries(experimentVariables.reduce((acc, variable) => {
+                        acc[variable.name] = variableValues[variable.name] || variable.default_value;
+                        return acc;
+                      }, {} as Record<string, number>)).map(([key, value]) => (
+                        <div key={key}>{`${key}: ${value}`}</div>
+                      ))}
 
                       <CardContent className="p-0 relative">
                         <div className="relative aspect-video w-full overflow-hidden">
@@ -590,7 +849,12 @@ export default function BioSimPage() {
                             simulationSpeed={simulationSpeed}
                             selectedExperiment={selectedExperimentId || ""}
                             highQuality={highQuality}
-                            variables={variableValues}
+                            variables={{
+                              light: variableValues.light || 0,
+                              co2: variableValues.co2 || 0,
+                              water: variableValues.water || 0,
+                              temperature: variableValues.temperature || 0,
+                            }}
                           />
 
                           {!simulationRunning && !showResults && (
@@ -607,7 +871,7 @@ export default function BioSimPage() {
                                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
                                 disabled={!selectedExperimentId}
                               >
-                                <Play className="mr-2 h-4 w-4" />
+                                <PlayIcon className="mr-2 h-4 w-4" />
                                 Démarrer la simulation
                               </Button>
                             </div>
@@ -617,8 +881,15 @@ export default function BioSimPage() {
                             {showResults && (
                               <SimulationResults
                                 results={results}
+                                experimentId={selectedExperimentId || ""}
+                                experimentTitle={currentExperiment?.title || ""}
+                                variableValues={experimentVariables.reduce((acc, variable) => {
+                                  acc[variable.name] = variableValues[variable.name] || variable.default_value;
+                                  return acc;
+                                }, {} as Record<string, number>)}
                                 onReset={resetSimulation}
-                                onSaveNotes={() => setActiveTab("notes")}
+                                onSaveNotes={saveResultsAndNotes}
+                                isSaving={isSavingNotes}
                               />
                             )}
                           </AnimatePresence>
@@ -703,7 +974,11 @@ export default function BioSimPage() {
 
                   {/* Results panel - only shown when simulation is running or complete */}
                   {(simulationRunning || showResults) && (
-                    <ResultsPanel results={results} simulationTime={simulationTime} variables={variableValues} />
+                    <ResultsPanel
+                      results={results}
+                      simulationTime={simulationTime}
+                      variables={variableValues}
+                    />
                   )}
                 </TabsContent>
 
@@ -775,64 +1050,6 @@ function Award(props) {
     >
       <circle cx="12" cy="8" r="6" />
       <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
-    </svg>
-  )
-}
-
-function Check(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  )
-}
-
-function Lock(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  )
-}
-
-function Play(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polygon points="5 3 19 12 5 21 5 3" />
     </svg>
   )
 }

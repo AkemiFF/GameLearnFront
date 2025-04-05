@@ -223,10 +223,10 @@ export function SimulationCanvas({
   return (
     <div className="absolute inset-0 w-full h-full">
       {/* Fond subtil qui s'adapte au thème */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 dark:from-primary/10 dark:to-secondary/10 opacity-30"></div>
+      {/* <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 dark:from-primary/10 dark:to-secondary/10 opacity-30"></div> */}
 
       {/* Légende des couleurs */}
-      <div className="absolute bottom-2 right-2 z-20 bg-background/80 backdrop-blur-sm rounded-lg p-2 text-xs flex flex-col gap-1">
+      {/* <div className="absolute bottom-2 right-2 z-20 bg-background/80 backdrop-blur-sm rounded-lg p-2 text-xs flex flex-col gap-1">
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded-full bg-yellow-500 dark:bg-yellow-400"></div>
           <span>Lumière: {variables.light}%</span>
@@ -243,7 +243,7 @@ export function SimulationCanvas({
           <div className="w-3 h-3 rounded-full bg-red-600 dark:bg-red-400"></div>
           <span>Temp: {variables.temperature}°C</span>
         </div>
-      </div>
+      </div> */}
 
       <canvas
         ref={canvasRef}
