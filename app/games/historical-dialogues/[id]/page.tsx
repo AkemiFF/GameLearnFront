@@ -236,9 +236,11 @@ export default function HistoricalDialoguePage() {
 
 
       const responseData = await response.json()
-      const parsedResponse = responseData as AIResponseType
+      const parsedResponse = JSON.parse(responseData.response)
+
       const newMood = parsedResponse.mood || "neutral"
-      const responseText = parsedResponse.message
+      const responseText = parsedResponse.content
+      console.log(parsedResponse);
 
       // Create JSON response with mood
       const responseJson = {
