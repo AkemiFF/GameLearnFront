@@ -62,7 +62,7 @@ export function TheoryContent({ experimentId, theoryContent }: TheoryContentProp
               ),
               td: ({ node, ...props }) => <td className="px-3 py-2 whitespace-nowrap" {...props} />,
               tr: ({ node, ...props }) => <tr className="border-b border-border" {...props} />,
-              code: ({ node, inline, className, children, ...props }) => {
+              code: ({ node, inline, className, children, ...props }: { node: any; inline?: boolean; className?: string; children?: React.ReactNode }) => {
                 const match = /language-(\w+)/.exec(className || "")
                 return !inline && match ? (
                   <SyntaxHighlighter

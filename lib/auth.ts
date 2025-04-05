@@ -13,8 +13,8 @@ const authManager = (type: AuthType = "user") => {
             const authData: AuthData = {
                 access: responseData.access,
                 refresh: responseData.refresh,
-                username: responseData.user.username,
-                email: responseData.user.email,
+                username: responseData.username,
+                email: responseData.email,
             };
 
             localStorage.setItem(storageKey, JSON.stringify(authData));
@@ -66,7 +66,7 @@ const authManager = (type: AuthType = "user") => {
             if (!refreshToken) {
                 throw new Error("Aucun token de rafraîchissement disponible");
             }
-            const response = await fetch(`${BASE_URL}/accounts/token/refresh/`, {
+            const response = await fetch(`${BASE_URL}/auth/token/refresh/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ refresh: refreshToken }),
@@ -81,7 +81,7 @@ const authManager = (type: AuthType = "user") => {
 
         logout: () => {
             localStorage.removeItem(storageKey);
-            window.location.href = type === "admin" ? "/admin/login" : "/login";
+            window.location.href = type === "admin" ? "/admin/login" : "/auth/login";
         }
     };
 

@@ -10,8 +10,6 @@ export interface AuthResponse {
     user_id?: number; // Pour les utilisateurs normaux
     admin_id?: number; // Pour les administrateurs
     username: string;
-    email: string;
-    role: UserRole;
     token_lifetime: {
         access: number; // Durée en secondes
         refresh: number; // Durée en secondes
