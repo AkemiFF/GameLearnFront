@@ -1,6 +1,7 @@
 "use client"
-import Image from "next/image"
 import type { HistoricalCharacter } from "@/data/historical-characters"
+import Image from "next/image"
+import { useEffect, useState } from "react"
 
 interface CharacterIllustrationProps {
   character: HistoricalCharacter
@@ -10,28 +11,29 @@ interface CharacterIllustrationProps {
 }
 
 export function CharacterIllustration({ character, mood, message, isTyping }: CharacterIllustrationProps) {
-  // Get the appropriate image based on the character and mood
-  const getCharacterImage = () => {
-    // In a real implementation, you would have different images for each character and mood
-    // For now, we'll use placeholder paths that follow a convention
-    return `/images/historical-characters/${character.id}-${mood}.png`
-  }
+  const [currentImage, setCurrentImage] = useState<string>(`/images/historical-characters/${character.id}-${mood}.png`)
+
+  useEffect(() => {
+    const newImage = `/images/historical-characters/${character.id}-${mood}.png`
+    const img = document.createElement('img')
+    img.src = newImage
+    img.onload = () => setCurrentImage(newImage)
+    img.onerror = () => setCurrentImage(`/images/historical-characters/${character.id}.png`)
+  }, [mood, character.id])
 
   return (
     <div className="flex flex-col md:flex-row items-center justify-center gap-6 p-6 h-full">
-      {/* Character illustration */}
       <div className="relative w-64 h-64 md:w-80 md:h-80">
         <div className="absolute inset-0 bg-gradient-to-b from-amber-100/30 to-amber-200/30 dark:from-amber-900/20 dark:to-amber-800/20 rounded-full blur-xl"></div>
         <Image
-          src={getCharacterImage() || "/placeholder.svg"}
+          src={currentImage}
           alt={`${character.name} - ${mood}`}
           width={300}
           height={300}
           className="object-contain z-10 relative drop-shadow-lg"
-          // Fallback to character portrait if the mood-specific image doesn't exist
           onError={(e) => {
             const target = e.target as HTMLImageElement
-            target.src = `/images/historical-characters/${character.id}.jpg`
+            target.src = `/images/historical-characters/default.png`
           }}
         />
 
