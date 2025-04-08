@@ -1,42 +1,43 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
 import { AnimatePresence } from "framer-motion"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
-  Home,
   Beaker,
+  CheckIcon,
   HelpCircle,
-  Settings,
+  Home,
+  LockIcon,
   Maximize,
   Minimize,
   PlayIcon,
-  CheckIcon,
-  LockIcon,
+  Settings,
 } from "lucide-react"
 import { useTheme } from "next-themes"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { useFullscreen } from "@/hooks/use-fullscreen"
 import { toast } from "@/components/ui/use-toast"
+import { useFullscreen } from "@/hooks/use-fullscreen"
 
 // Import components
+import { ExperimentList } from "@/components/biosim/experiment-list"
+import { HelpDialog } from "@/components/biosim/help-dialog"
+import { NotesPanel } from "@/components/biosim/notes-panel"
+import { ResultsPanel } from "@/components/biosim/results-panel"
+import { SettingsDialog } from "@/components/biosim/settings-dialog"
 import { SimulationCanvas } from "@/components/biosim/simulation-canvas"
 import { SimulationControls } from "@/components/biosim/simulation-controls"
-import { ExperimentList } from "@/components/biosim/experiment-list"
-import { ResultsPanel } from "@/components/biosim/results-panel"
 import { SimulationResults } from "@/components/biosim/simulation-results"
-import { TutorialOverlay } from "@/components/biosim/tutorial-overlay"
-import { SettingsDialog } from "@/components/biosim/settings-dialog"
-import { HelpDialog } from "@/components/biosim/help-dialog"
 import { TheoryContent } from "@/components/biosim/theory-content"
-import { NotesPanel } from "@/components/biosim/notes-panel"
+import { TutorialOverlay } from "@/components/biosim/tutorial-overlay"
+import { BASE_URL } from "@/lib/host"
 
 // Types pour les données d'API
 interface Experiment {
@@ -117,9 +118,9 @@ const tutorialSteps = [
 
 const initialExperiments = [
   {
-    id: "1",
+    id: "0",
     title: "Defi scientific",
-    description: "FAire un defi scintifique",
+    description: "Faire un defi scientifique",
     difficulty: "intermediate",
     duration: "21",
     icon: "science",
@@ -228,7 +229,7 @@ export default function BioSimPage() {
     const fetchExperiments = async () => {
       try {
         setLoading(true)
-        const response = await fetch("http://localhost:8000/api/biosim/experiments/")
+        const response = await fetch(`${BASE_URL}/biosim/experiments/`)
         if (!response.ok) {
           throw new Error(`Error ${response.status}: ${response.statusText}`)
         }
@@ -256,7 +257,7 @@ export default function BioSimPage() {
 
       try {
         setLoading(true)
-        const response = await fetch(`http://localhost:8000/api/biosim/experiments/${selectedExperimentId}/variables/`)
+        const response = await fetch(`${BASE_URL}/biosim/experiments/${selectedExperimentId}/variables/`)
         if (!response.ok) {
           throw new Error(`Error ${response.status}: ${response.statusText}`)
         }
@@ -292,7 +293,7 @@ export default function BioSimPage() {
 
       try {
         setLoading(true)
-        const response = await fetch("http://localhost:8000/api/biosim/expected-results/")
+        const response = await fetch(`${BASE_URL}/biosim/expected-results/`)
         if (!response.ok) {
           throw new Error(`Error ${response.status}: ${response.statusText}`)
         }
@@ -566,7 +567,7 @@ export default function BioSimPage() {
         }
 
         // Envoyer les résultats à l'API
-        const resultsResponse = await fetch("http://localhost:8000/api/biosim/results/", {
+        const resultsResponse = await fetch(`${BASE_URL}/biosim/results/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -587,7 +588,7 @@ export default function BioSimPage() {
         }
 
         // Envoyer les notes à l'API
-        const notesResponse = await fetch("http://localhost:8000/api/biosim/notes/", {
+        const notesResponse = await fetch(`${BASE_URL}/biosim/notes/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -602,7 +603,7 @@ export default function BioSimPage() {
         // Débloquer l'achievement si l'efficacité est supérieure à 90%
         if (results.efficiency >= 0.9) {
           try {
-            await fetch("http://localhost:8000/api/biosim/user-achievements/unlock/optimal_conditions/", {
+            await fetch(`${BASE_URL}/biosim/user-achievements/unlock/optimal_conditions/`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
